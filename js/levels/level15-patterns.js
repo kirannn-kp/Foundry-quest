@@ -163,59 +163,97 @@ export function mount(container, api) {
       btn.style.padding = '8px 14px'; btn.style.fontSize = '0.78rem';
     });
 
-    // Render SVG with animation
     const svg = card.querySelector('#pattern-svg');
-    if (animFrame) cancelAnimationFrame(animFrame);
+    if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
 
-    // Build edges HTML
+    // Build the full animation path through all edges
+    const totalDur = p.edges.length * 0.8; // seconds per full cycle
+    const segDur = 0.8; // duration per edge segment
+
+    // Build keyframe values for the particle traveling through ALL edges
+    const pathPoints = [];
+    for (const e of p.edges) {
+      const from = p.nodes.find(n => n.id === e.from);
+      const to = p.nodes.find(n => n.id === e.to);
+      pathPoints.push({ x: from.x, y: from.y });
+      pathPoints.push({ x: to.x, y: to.y });
+    }
+    // Remove duplicate consecutive points
+    const uniquePath = [pathPoints[0]];
+    for (let i = 1; i < pathPoints.length; i++) {
+      if (pathPoints[i].x !== pathPoints[i-1].x || pathPoints[i].y !== pathPoints[i-1].y) {
+        uniquePath.push(pathPoints[i]);
+      }
+    }
+
+    const xValues = uniquePath.map(pt => pt.x).join(';');
+    const yValues = uniquePath.map(pt => pt.y).join(';');
+    const keyTimes = uniquePath.map((_, i) => (i / (uniquePath.length - 1)).toFixed(3)).join(';');
+    const animDuration = uniquePath.length * 0.5; // 0.5s per waypoint
+
+    // Edges with sequential glow animation
     const edgesHtml = p.edges.map((e, i) => {
       const from = p.nodes.find(n => n.id === e.from);
       const to = p.nodes.find(n => n.id === e.to);
-      const len = Math.sqrt((to.x - from.x) ** 2 + (to.y - from.y) ** 2);
+      const mx = (from.x + to.x) / 2, my = (from.y + to.y) / 2;
+      // Each edge lights up in sequence as part of the loop
+      const delay = i * (animDuration / p.edges.length);
+      const glowDur = animDuration / p.edges.length;
       return `
-        <line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}"
-          stroke="#3d5058" stroke-width="2"
-          stroke-dasharray="${len}" stroke-dashoffset="${len}"
-          style="animation: edgeDraw 0.6s ease forwards; animation-delay: ${i * 0.12}s;">
-          <animate attributeName="stroke-dashoffset" from="${len}" to="0" dur="0.6s" begin="${i * 0.12}s" fill="freeze"/>
-        </line>
-        ${e.label ? `<text x="${(from.x + to.x) / 2}" y="${(from.y + to.y) / 2 - 6}" text-anchor="middle" fill="#5b6c74" font-size="8" font-family="IBM Plex Mono,monospace" opacity="0" style="animation: fadeInText 0.3s ease forwards; animation-delay: ${i * 0.12 + 0.3}s;">
-          <animate attributeName="opacity" from="0" to="1" dur="0.3s" begin="${i * 0.12 + 0.3}s" fill="freeze"/>${e.label}
-        </text>` : ''}
+        <g class="edge-g">
+          <line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke="#253039" stroke-width="2"/>
+          <line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke="#2ee6c8" stroke-width="3" opacity="0" class="edge-glow" data-idx="${i}">
+            <animate attributeName="opacity" values="0;0.9;0.9;0" keyTimes="0;0.1;0.7;1" dur="${animDuration}s" begin="${delay}s" repeatCount="indefinite"/>
+          </line>
+          ${e.label ? `<text x="${mx}" y="${my - 8}" text-anchor="middle" fill="#5b6c74" font-size="8" font-family="IBM Plex Mono,monospace">${e.label}</text>` : ''}
+        </g>
       `;
     }).join('');
 
-    // Build nodes HTML with staggered animation
-    const nodesHtml = p.nodes.map((n, i) => `
-      <g style="opacity:0;animation: nodeAppear 0.4s ease forwards; animation-delay: ${i * 0.1}s;">
-        <circle cx="${n.x}" cy="${n.y}" r="26" fill="#0a0e13" stroke="${n.color}" stroke-width="2.5"/>
-        <text x="${n.x}" y="${n.y}" text-anchor="middle" fill="${n.color}" font-size="9" font-weight="600" font-family="IBM Plex Mono,monospace">
-          ${n.label.split('\n').map((line, li) => `<tspan x="${n.x}" dy="${li === 0 ? (n.label.includes('\n') ? -4 : 4) : 12}">${line}</tspan>`).join('')}
-        </text>
-      </g>
-    `).join('');
+    // Nodes with pulse when particle arrives
+    const nodesHtml = p.nodes.map((n, i) => {
+      // Find which edge indices touch this node
+      const touchEdges = p.edges.map((e, ei) => (e.from === n.id || e.to === n.id) ? ei : -1).filter(x => x >= 0);
+      const firstTouch = touchEdges.length > 0 ? touchEdges[0] : 0;
+      const pulseDelay = firstTouch * (animDuration / p.edges.length);
 
-    // Animated data particle traveling along first path
-    const firstEdge = p.edges[0];
-    const fe_from = p.nodes.find(n => n.id === firstEdge.from);
-    const fe_to = p.nodes.find(n => n.id === firstEdge.to);
+      return `
+        <g>
+          <!-- Outer glow ring -->
+          <circle cx="${n.x}" cy="${n.y}" r="30" fill="none" stroke="${n.color}" stroke-width="1.5" opacity="0">
+            <animate attributeName="opacity" values="0;0.6;0" dur="${animDuration}s" begin="${pulseDelay}s" repeatCount="indefinite"/>
+            <animate attributeName="r" values="26;34;26" dur="${animDuration}s" begin="${pulseDelay}s" repeatCount="indefinite"/>
+          </circle>
+          <!-- Main node -->
+          <circle cx="${n.x}" cy="${n.y}" r="26" fill="#0a0e13" stroke="${n.color}" stroke-width="2.5">
+            <animate attributeName="stroke-width" values="2.5;4;2.5" dur="${animDuration}s" begin="${pulseDelay}s" repeatCount="indefinite"/>
+          </circle>
+          <text x="${n.x}" y="${n.y}" text-anchor="middle" fill="${n.color}" font-size="9" font-weight="600" font-family="IBM Plex Mono,monospace">
+            ${n.label.split('\n').map((line, li) => `<tspan x="${n.x}" dy="${li === 0 ? (n.label.includes('\n') ? -4 : 4) : 12}">${line}</tspan>`).join('')}
+          </text>
+        </g>
+      `;
+    }).join('');
 
     svg.innerHTML = `
-      <style>
-        @keyframes nodeAppear { from { opacity:0; transform:scale(0.5); } to { opacity:1; transform:scale(1); } }
-        @keyframes fadeInText { from { opacity:0; } to { opacity:1; } }
-        @keyframes pulse { 0%,100% { r:4; opacity:1; } 50% { r:7; opacity:0.6; } }
-        @keyframes travel {
-          0% { cx: ${fe_from.x}; cy: ${fe_from.y}; }
-          100% { cx: ${fe_to.x}; cy: ${fe_to.y}; }
-        }
-      </style>
+      <defs>
+        <filter id="particleGlow">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
       ${edgesHtml}
       ${nodesHtml}
-      <!-- Traveling data particle -->
-      <circle r="4" fill="#2ee6c8" opacity="0.9" style="animation: pulse 1.5s ease-in-out infinite, travel 2s ease-in-out infinite alternate; animation-delay: 1s;">
-        <animate attributeName="cx" from="${fe_from.x}" to="${fe_to.x}" dur="2s" begin="1s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.2 1"/>
-        <animate attributeName="cy" from="${fe_from.y}" to="${fe_to.y}" dur="2s" begin="1s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.2 1"/>
+      <!-- Traveling data particle through ALL nodes -->
+      <circle r="5" fill="#2ee6c8" filter="url(#particleGlow)">
+        <animate attributeName="cx" values="${xValues}" keyTimes="${keyTimes}" dur="${animDuration}s" repeatCount="indefinite" calcMode="spline" keySplines="${uniquePath.slice(1).map(() => '0.4 0 0.2 1').join(';')}"/>
+        <animate attributeName="cy" values="${yValues}" keyTimes="${keyTimes}" dur="${animDuration}s" repeatCount="indefinite" calcMode="spline" keySplines="${uniquePath.slice(1).map(() => '0.4 0 0.2 1').join(';')}"/>
+        <animate attributeName="r" values="${uniquePath.map((_, i) => i % 2 === 0 ? '5' : '7').join(';')}" keyTimes="${keyTimes}" dur="${animDuration}s" repeatCount="indefinite"/>
+      </circle>
+      <!-- Trail particle (delayed) -->
+      <circle r="3" fill="#ffb454" opacity="0.6" filter="url(#particleGlow)">
+        <animate attributeName="cx" values="${xValues}" keyTimes="${keyTimes}" dur="${animDuration}s" begin="0.3s" repeatCount="indefinite" calcMode="spline" keySplines="${uniquePath.slice(1).map(() => '0.4 0 0.2 1').join(';')}"/>
+        <animate attributeName="cy" values="${yValues}" keyTimes="${keyTimes}" dur="${animDuration}s" begin="0.3s" repeatCount="indefinite" calcMode="spline" keySplines="${uniquePath.slice(1).map(() => '0.4 0 0.2 1').join(';')}"/>
       </circle>
     `;
 
