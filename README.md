@@ -4,6 +4,8 @@ Foundry Quest is a free, single-page, browser-based educational game that teache
 
 No backend, no build step, no login. Everything runs as static HTML/CSS/JS and your progress is saved locally in your browser (`localStorage`).
 
+**Play it live:** [https://kirannn-kp.github.io/Foundry-quest/](https://kirannn-kp.github.io/Foundry-quest/)
+
 ## What you'll learn
 
 The complete journey from AI concepts to production deployment:
