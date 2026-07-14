@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Foundry Quest — Master AI &amp; Microsoft Foundry</title>
+<meta name="description" content="An interactive gamified journey through AI fundamentals, RAG, Agents, and Microsoft Foundry — from neural networks to production deployment." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 21 21%22><rect x=%221%22 y=%221%22 width=%229%22 height=%229%22 fill=%22%23F25022%22/><rect x=%2211%22 y=%221%22 width=%229%22 height=%229%22 fill=%22%237FBA00%22/><rect x=%221%22 y=%2211%22 width=%229%22 height=%229%22 fill=%22%2300A4EF%22/><rect x=%2211%22 y=%2211%22 width=%229%22 height=%229%22 fill=%22%23FFB900%22/></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand" data-nav="landing">
+        <svg class="ms-logo" viewBox="0 0 21 21" width="18" height="18" aria-hidden="true" focusable="false">
+          <rect x="1" y="1" width="9" height="9" fill="#F25022" />
+          <rect x="11" y="1" width="9" height="9" fill="#7FBA00" />
+          <rect x="1" y="11" width="9" height="9" fill="#00A4EF" />
+          <rect x="11" y="11" width="9" height="9" fill="#FFB900" />
+        </svg>
+        <span class="brand-name">Foundry Quest</span>
+      </div>
+      <div class="topbar-stats" id="topbar-stats" hidden>
+        <div class="stat" title="Total score">
+          <span class="stat-label">Score</span><span id="stat-score">0</span>
+        </div>
+        <div class="stat" title="Badges earned">
+          <span class="stat-label">Badges</span><span id="stat-badges">0</span>
+        </div>
+        <button class="btn btn-ghost" id="btn-map" title="Level map">Map</button>
+        <button class="btn btn-ghost btn-danger" id="btn-reset" title="Reset progress">Reset</button>
+      </div>
+      <button class="btn btn-ghost" id="btn-mute" title="Mute sound effects" aria-pressed="false">Sound: On</button>
+    </header>
+
+    <main id="main-content">
+      <!-- LANDING SCREEN -->
+      <section class="screen active" id="screen-landing">
+        <canvas id="landing-bg-canvas" class="landing-bg-canvas" aria-hidden="true"></canvas>
+        <div class="landing-hero">
+          <h1>Foundry Quest</h1>
+          <p class="tagline">Master the complete journey from <strong>AI fundamentals</strong> to <strong>production deployment</strong> with Microsoft Foundry — through interactive, gamified levels.</p>
+          <ul class="hero-points">
+            <li>Trace AI's evolution from rule-based systems to autonomous agents</li>
+            <li>Understand embeddings, RAG, GraphRAG, and vector databases</li>
+            <li>Master prompt engineering & multi-agent orchestration</li>
+            <li>Build, evaluate, and deploy agents with Microsoft Foundry</li>
+            <li>Explore real architecture patterns & enterprise case studies</li>
+          </ul>
+          <div class="hero-actions">
+            <button class="btn btn-primary btn-large" id="btn-start">Begin Quest →</button>
+            <button class="btn btn-ghost btn-large" id="btn-intro">What is Foundry?</button>
+          </div>
+          <p class="hero-note">No login. No install. Your progress is saved automatically in this browser.</p>
+        </div>
+      </section>
+
+      <!-- LEVEL MAP SCREEN -->
+      <section class="screen" id="screen-map">
+        <h2 class="section-title">Choose Your Level</h2>
+        <p class="section-sub">Complete each level to unlock the next. Replay anytime to improve your score.</p>
+        <div class="world-tabs" id="world-tabs">
+          <button class="world-tab active" data-world="all">All Levels</button>
+          <button class="world-tab" data-world="ai">World 1: AI Foundations</button>
+          <button class="world-tab" data-world="bridge">Bridge</button>
+          <button class="world-tab" data-world="foundry">World 2: Foundry</button>
+          <button class="world-tab" data-world="bonus">Bonus</button>
+        </div>
+        <div class="progress-rail" id="progress-rail"></div>
+        <div class="level-grid" id="level-grid"></div>
+        <div class="badge-shelf" id="badge-shelf"></div>
+        <div class="achievements-row" id="achievements-row"></div>
+      </section>
+
+      <!-- LEVEL CONTAINERS (mounted dynamically) -->
+      <section class="screen level-screen" id="screen-level-1">
+        <div class="level-header">
+          <button class="btn btn-ghost back-btn" data-nav="map">← Map</button>
+          <h2>Level 1 · The AI Revolution</h2>
+          <span class="world-badge world-ai">World 1</span>
+        </div>
+        <div class="level-body" id="level-1-body"></div>
+        <div class="level-next-bar" id="level-1-next" hidden></div>
+      </section>
+
+      <section class="screen level-screen" id="screen-level-2">
+        <div class="level-header">
+          <button class="btn btn-ghost back-btn" data-nav="map">← Map</button>
+          <h2>Level 2 · How Machines Learn</h2>
+          <span class="world-badge world-ai">World 1</span>
+        </div>
+        <div class="level-body" id="level-2-body"></div>
+        <div class="level-next-bar" id="level-2-next" hidden></div>
+      </section>
+
+      <section class="screen level-screen" id="screen-level-3">
+        <div class="level-header">
+          <button class="btn btn-ghost back-btn" data-nav="map">← Map</button>
+          <h2>Level 3 · Neural Networks &amp; Deep Learning</h2>
+          <span class="world-badge world-ai">World 1</span>
+        </div>
+        <div class="level-body" id="level-3-body"></div>
+        <div class="level-next-bar" id="level-3-next" hidden></div>
+      </section>
+
+      <section class="screen level-screen" id="screen-level-4">
+        <div class="level-header">
+          <button class="btn btn-ghost back-btn" data-nav="map">← Map</button>
+          <h2>Level 4 · Transformers &amp; Large Language Models</h2>
+          <span class="world-badge world-ai">World 1</span>
+        </div>
+        <div class="level-body" id="level-4-body"></div>
+        <div class="level-next-bar" id="level-4-next" hidden></div>
+      </section>
+
+      <section class="screen level-screen" id="screen-level-5">
+        <div class="level-header">
+          <button class="btn btn-ghost back-btn" data-nav="map">← Map</button>
+          <h2>Level 5 · Embeddings &amp; Vector Space</h2>
+          <span class="world-badge world-ai">World 1</span>
+        </div>
+        <div class="level-body" id="level-5-body"></div>
+        <div class="level-next-bar" id="level-5-next" hidden></div>
+      </section>
+
+      <section class="screen level-screen" id="screen-level-6">
+        <div class="level-header">
+          <button class="btn btn-ghost back-btn" data-nav="map">← Map</button>
+          <h2>Level 6 · RAG: Retrieval-Augmented Generation</h2>
+          <span class="world-badge world-ai">World 1</span>
+        </div>
+        <div class="level-body" id="level-6-body"></div>
+        <div class="level-next-bar" id="level-6-next" hidden></div>
+      </section>
+
+      <section class="screen level-screen" id="screen-level-7">
+        <div class="level-header">
+          <button class="btn btn-ghost back-btn" data-nav="map">← Map</button>
+          <h2>Level 7 · Graph RAG &amp; Knowledge Graphs</h2>
+          <span class="world-badge world-ai">World 1</span>
+        </div>
+        <div class="level-body" id="level-7-body"></div>
+        <div class="level-next-bar" id="level-7-next" hidden></div>
+      </section>
+
+      <section class="screen level-screen" id="screen-level-8">
+        <div class="level-header">
+          <button class="btn btn-ghost back-btn" data-nav="map">← Map</button>
+          <h2>Level 8 · Prompt Engineering &amp; AI Agents</h2>
+          <span class="world-badge world-ai">World 1</span>
+        </div>
+        <div class="level-body" id="level-8-body"></div>
+        <div class="level-next-bar" id="level-8-next" hidden></div>
+      </section>
+
+      <section class="screen level-screen" id="screen-level-9">
+        <div class="level-header">
+          <button class="btn btn-ghost back-btn" data-nav="map">← Map</button>
+          <h2>Level 9 · From Notebook to Production</h2>
+          <span class="world-badge world-bridge">Bridge</span>
+        </div>
+        <div class="level-body" id="level-9-body"></div>
+        <div class="level-next-bar" id="level-9-next" hidden></div>
+      </section>
+
+      <section class="screen level-screen" id="screen-level-10">
+        <div class="level-header">
+          <button class="btn btn-ghost back-btn" data-nav="map">← Map</button>
+          <h2>Level 10 · Microsoft Foundry: The Platform</h2>
+          <span class="world-badge world-foundry">World 2</span>
+        </div>
+        <div class="level-body" id="level-10-body"></div>
+        <div class="level-next-bar" id="level-10-next" hidden></div>
+      </section>
+
+      <section class="screen level-screen" id="screen-level-11">
+        <div class="level-header">
+          <button class="btn btn-ghost back-btn" data-nav="map">← Map</button>
+          <h2>Level 11 · Building Agents in Foundry</h2>
+          <span class="world-badge world-foundry">World 2</span>
+        </div>
+        <div class="level-body" id="level-11-body"></div>
+        <div class="level-next-bar" id="level-11-next" hidden></div>
+      </section>
+
+      <section class="screen level-screen" id="screen-level-12">
+        <div class="level-header">
+          <button class="btn btn-ghost back-btn" data-nav="map">← Map</button>
+          <h2>Level 12 · Evaluate, Trace &amp; Optimize</h2>
+          <span class="world-badge world-foundry">World 2</span>
+        </div>
+        <div class="level-body" id="level-12-body"></div>
+        <div class="level-next-bar" id="level-12-next" hidden></div>
+      </section>
+
+      <section class="screen level-screen" id="screen-level-13">
+        <div class="level-header">
+          <button class="btn btn-ghost back-btn" data-nav="map">← Map</button>
+          <h2>Level 13 · Deploy, Scale &amp; Monitor</h2>
+          <span class="world-badge world-foundry">World 2</span>
+        </div>
+        <div class="level-body" id="level-13-body"></div>
+        <div class="level-next-bar" id="level-13-next" hidden></div>
+      </section>
+
+      <section class="screen level-screen" id="screen-level-14">
+        <div class="level-header">
+          <button class="btn btn-ghost back-btn" data-nav="map">← Map</button>
+          <h2>Bonus · Live AI Playground</h2>
+        </div>
+        <div class="level-body" id="level-14-body"></div>
+        <div class="level-next-bar" id="level-14-next" hidden></div>
+      </section>
+
+      <section class="screen level-screen" id="screen-level-15">
+        <div class="level-header">
+          <button class="btn btn-ghost back-btn" data-nav="map">← Map</button>
+          <h2>Bonus · Architecture Patterns</h2>
+        </div>
+        <div class="level-body" id="level-15-body"></div>
+        <div class="level-next-bar" id="level-15-next" hidden></div>
+      </section>
+
+      <section class="screen level-screen" id="screen-level-16">
+        <div class="level-header">
+          <button class="btn btn-ghost back-btn" data-nav="map">← Map</button>
+          <h2>Bonus · Enterprise AI Case Studies</h2>
+        </div>
+        <div class="level-body" id="level-16-body"></div>
+        <div class="level-next-bar" id="level-16-next" hidden></div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <span>Foundry Quest — an open-source educational game about AI &amp; Microsoft Foundry.</span>
+      <span class="footer-credit">Built with Copilot · <a href="https://github.com" target="_blank" rel="noopener noreferrer">GitHub</a></span>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- INTRO WALKTHROUGH OVERLAY -->
+  <div class="intro-overlay" id="intro-overlay" hidden>
+    <div class="intro-stage">
+      <div class="intro-topline">
+        <span class="intro-eyebrow">// Foundry Quest — Primer</span>
+        <button class="intro-skip" id="intro-skip">Skip ✕</button>
+      </div>
+      <h3 class="intro-title" id="intro-title">What is Microsoft Foundry?</h3>
+      <p class="intro-caption" id="intro-caption"></p>
+      <div class="intro-visual" id="intro-visual"></div>
+      <div class="intro-controls">
+        <div class="intro-dots" id="intro-dots"></div>
+        <div class="intro-nav">
+          <button class="btn btn-ghost" id="intro-prev">← Back</button>
+          <button class="btn btn-primary" id="intro-next">Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
